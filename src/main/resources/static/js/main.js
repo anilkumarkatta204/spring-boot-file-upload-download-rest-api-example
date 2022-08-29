@@ -7,6 +7,7 @@ var singleFileUploadSuccess = document.querySelector('#singleFileUploadSuccess')
 
 var multipleUploadForm = document.querySelector('#multipleUploadForm');
 var multipleFileUploadInput = document.querySelector('#multipleFileUploadInput');
+var mobileNumberInput = document.querySelector('#mobileNumberInput');
 var multipleFileUploadError = document.querySelector('#multipleFileUploadError');
 var multipleFileUploadSuccess = document.querySelector('#multipleFileUploadSuccess');
 
@@ -33,8 +34,9 @@ function uploadSingleFile(file) {
     xhr.send(formData);
 }
 
-function uploadMultipleFiles(files) {
+function uploadMultipleFiles(mobileNumber, files) {
     var formData = new FormData();
+    formData.append("mobileNumber", mobileNumber);
     for(var index = 0; index < files.length; index++) {
         formData.append("files", files[index]);
     }
@@ -75,11 +77,12 @@ singleUploadForm.addEventListener('submit', function(event){
 
 multipleUploadForm.addEventListener('submit', function(event){
     var files = multipleFileUploadInput.files;
+    var mobileNumber = mobileNumberInput.value;
     if(files.length === 0) {
         multipleFileUploadError.innerHTML = "Please select at least one file";
         multipleFileUploadError.style.display = "block";
     }
-    uploadMultipleFiles(files);
+    uploadMultipleFiles(mobileNumber, files);
     event.preventDefault();
 }, true);
 

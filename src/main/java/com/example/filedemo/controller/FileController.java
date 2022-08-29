@@ -1,5 +1,6 @@
 package com.example.filedemo.controller;
 
+import com.example.filedemo.model.UploadedPictures;
 import com.example.filedemo.payload.UploadFileResponse;
 import com.example.filedemo.service.FileStorageService;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -28,11 +30,16 @@ public class FileController {
     private FileStorageService fileStorageService;
 
     @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file) {
-        String fileName = fileStorageService.storeFile(file);
+    public UploadFileResponse uploadFile(@RequestParam("mobileNumber") String mobileNumber, @RequestParam("file") MultipartFile file) {
+        File directory = new File("C:/Users/ak185292/uploads/" + mobileNumber);
+        if (! directory.exists()){
+            directory.mkdir();
+        }
+
+        String fileName = fileStorageService.storeFile(mobileNumber, file);
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/downloadFile/")
+                .path("/downloadFile/"+mobileNumber+"/")
                 .path(fileName)
                 .toUriString();
 
@@ -41,17 +48,26 @@ public class FileController {
     }
 
     @PostMapping("/uploadMultipleFiles")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
-        return Arrays.asList(files)
+    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("mobileNumber") String mobileNumber, @RequestParam("files") MultipartFile[] files) {
+
+        List<UploadFileResponse> uploadFileResponses = Arrays.asList(files)
                 .stream()
-                .map(file -> uploadFile(file))
+                .map(file -> uploadFile(mobileNumber, file))
                 .collect(Collectors.toList());
+
+        if(!uploadFileResponses.isEmpty()) {
+            UploadedPictures up = new UploadedPictures();
+            up.setMobileNumber(mobileNumber);
+            up.setUploadCount(uploadFileResponses.size());
+        }
+
+        return uploadFileResponses;
     }
 
-    @GetMapping("/downloadFile/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
+    @GetMapping("/downloadFile/{mobileNumber}/{fileName:.+}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String mobileNumber, @PathVariable String fileName, HttpServletRequest request) {
         // Load file as Resource
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
+        Resource resource = fileStorageService.loadFileAsResource(mobileNumber, fileName);
 
         // Try to determine file's content type
         String contentType = null;
